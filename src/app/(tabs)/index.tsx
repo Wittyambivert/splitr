@@ -1,0 +1,53 @@
+import { useEffect } from 'react';
+import { View, Text, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Link } from 'expo-router';
+import { Plus, Hand, MoreVertical } from 'lucide-react-native';
+import { GradientBackdrop, Card, Tag, StatDisplay, ListRow, IconCircle } from '@/components/ui';
+import { useAuth } from '@/hooks';
+
+export default function DashboardScreen() {
+  const { user } = useAuth();
+
+  return (
+    <View className="flex-1 bg-canvas">
+      <GradientBackdrop variant="frame" opacity={0.35} />
+      <SafeAreaView className="flex-1 px-5" edges={['top']}>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingTop: 20, paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="flex-row justify-between items-center mb-6">
+            <View>
+              <Text className="font-body text-[28px] leading-[34px] text-ink">
+                Get your <Text className="font-display">split</Text>
+              </Text>
+              <Text className="font-body text-[28px] leading-[34px] text-ink">
+                Swipe <Text className="font-display">to settle</Text>
+              </Text>
+            </View>
+            <Link href="/expense/new" asChild>
+              <IconCircle icon={Plus} variant="surface" accessibilityLabel="Add expense" onPress={() => {}} />
+            </Link>
+          </View>
+
+          <StatDisplay value="$0" label="Net balance" badgeLabel="Settled" />
+
+          <View className="mt-8 mb-4">
+            <Text className="text-xs text-ink-muted font-heading uppercase tracking-wide mb-3">
+              Your Groups
+            </Text>
+            <Card variant="hero" className="bg-gradient-card-blue">
+              <Tag label="No groups yet" variant="surface" />
+              <Text className="font-heading text-[17px] leading-[22px] text-ink mt-2">
+                Create your first group to start splitting expenses
+              </Text>
+            </Card>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
+  );
+}
