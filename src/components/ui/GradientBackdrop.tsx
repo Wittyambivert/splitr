@@ -20,7 +20,7 @@ export function GradientBackdrop({ variant = 'frame', opacity = 0.35 }: Gradient
       colors={[colors.start, colors.end]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={{ position: 'absolute', inset: 0, opacity }}
+      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity }}
     />
   );
 }
