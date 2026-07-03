@@ -1,6 +1,6 @@
 # Splitr
 
-A Mobile app that scans receipts with OCR and splits bills among friends and roommates in real time. Built for a hackathon.
+A Mobile app that scans receipts with OCR and splits bills among friends and roommates in real time.
 
 ## Tech Stack
 
