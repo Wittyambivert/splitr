@@ -1,9 +1,52 @@
-:root {
-  --font-display:
-    Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-    Segoe UI Symbol, Noto Color Emoji;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
-  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
+@import 'tailwindcss';
+@import 'tailwindcss-animate';
+
+@theme {
+  /* Neutrals */
+  --color-canvas: #f2f0f5;
+  --color-canvas-alt: #edebf2;
+  --color-ink: #151316;
+  --color-ink-muted: #8a8791;
+  --color-ink-faint: #b7b4be;
+  --color-surface: #ffffff;
+  --color-surface-black: #0b0a0d;
+  --color-line: #e4e1ea;
+
+  /* Brand */
+  --color-brand-lime: #c6f24e;
+  --color-brand-lime-ink: #173300;
+  --color-accent-amber: #f4c430;
+  --color-accent-violet: #8b7bd8;
+  --color-accent-blush: #f3b7c3;
+
+  /* Pastels */
+  --color-pastel-pink: #f6cbd3;
+  --color-pastel-pink-ink: #b4425a;
+  --color-pastel-lilac: #dcd1f4;
+  --color-pastel-lilac-ink: #5b4a9e;
+  --color-pastel-sky: #cfe6f9;
+  --color-pastel-sky-ink: #2e6b96;
+  --color-pastel-mint: #d6f5d0;
+  --color-pastel-mint-ink: #2e7d42;
+
+  /* Semantic */
+  --color-success: #2e7d42;
+  --color-warning: #f4c430;
+  --color-danger: #e2554b;
+  --color-info: #8b7bd8;
+
+  /* Radii */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+
+  /* Font families */
+  --font-display: 'PlusJakartaSans-ExtraBold';
+  --font-heading: 'PlusJakartaSans-Bold';
+  --font-body: 'PlusJakartaSans-Regular';
+  --font-medium: 'PlusJakartaSans-Medium';
+  --font-mono: 'SpaceMono-Regular';
 }
