@@ -18,27 +18,26 @@ export default function ScanScreen() {
           className="flex-1"
           facing="back"
           onBarcodeScanned={() => {}}
-        >
-          <SafeAreaView className="flex-1" edges={['top']}>
-            <View className="flex-row justify-between px-5 pt-4">
-              <Pressable
-                className="w-11 h-11 rounded-pill bg-surface/20 items-center justify-center"
-                onPress={() => setStage('idle')}
-              >
-                <X size={20} color="#FFFFFF" />
-              </Pressable>
-              <View className="bg-brand-lime rounded-pill px-3 py-1 self-start">
-                <Text className="font-heading text-[11px] text-brand-lime-ink">Auto</Text>
-              </View>
-            </View>
-          </SafeAreaView>
-
-          <View className="absolute bottom-8 left-0 right-0 items-center">
-            <Pressable className="w-20 h-20 rounded-pill bg-surface/30 items-center justify-center border-4 border-surface/50">
-              <View className="w-16 h-16 rounded-pill bg-surface" />
+        />
+        <SafeAreaView className="absolute inset-0" edges={['top']} pointerEvents="box-none">
+          <View className="flex-row justify-between px-5 pt-4">
+            <Pressable
+              className="w-11 h-11 rounded-pill bg-surface/20 items-center justify-center"
+              onPress={() => setStage('idle')}
+            >
+              <X size={20} color="#FFFFFF" />
             </Pressable>
+            <View className="bg-brand-lime rounded-pill px-3 py-1 self-start">
+              <Text className="font-heading text-[11px] text-brand-lime-ink">Auto</Text>
+            </View>
           </View>
-        </CameraView>
+        </SafeAreaView>
+
+        <View className="absolute bottom-8 left-0 right-0 items-center" pointerEvents="box-none">
+          <Pressable className="w-20 h-20 rounded-pill bg-surface/30 items-center justify-center border-4 border-surface/50">
+            <View className="w-16 h-16 rounded-pill bg-surface" />
+          </Pressable>
+        </View>
       </View>
     );
   }

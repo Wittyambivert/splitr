@@ -1,8 +1,7 @@
 import { Platform } from 'react-native';
 
 export async function registerForPushNotifications(): Promise<string | null> {
-  const { getExpoPushTokenAsync, requestPermissionsAsync } = await import('expo-notifications');
-  const { getPermissionsAsync } = await import('expo-notifications');
+  const { getExpoPushTokenAsync, requestPermissionsAsync, getPermissionsAsync } = await import('expo-notifications');
 
   const existingStatus = (await getPermissionsAsync()).status;
   let finalStatus = existingStatus;
@@ -41,21 +40,5 @@ export async function sendPaymentReminder(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(message),
-  });
-}
-
-export function configureNotificationHandler(): void {
-  if (Platform.OS === 'web') return;
-
-  import('expo-notifications').then((Notifications) => {
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-        shouldShowBanner: true,
-        shouldShowList: true,
-      }),
-    });
   });
 }
