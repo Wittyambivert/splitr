@@ -1,40 +1,36 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ScanLine, ImagePlus, X } from 'lucide-react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { router } from 'expo-router';
+import { ScanLine, ImagePlus } from 'lucide-react-native';
+import { useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { GradientBackdrop, Tag } from '@/components/ui';
 
-type ScanStage = 'idle' | 'camera' | 'processing' | 'results';
+type ScanStage = 'idle' | 'processing';
 
 export default function ScanScreen() {
-  const cameraRef = useRef<CameraView>(null);
   const [stage, setStage] = useState<ScanStage>('idle');
-  const [permission, requestPermission] = useCameraPermissions();
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const insets = useSafeAreaInsets();
 
   const handleScanPress = async () => {
-    if (!permission?.granted) {
-      const result = await requestPermission();
+    if (!cameraPermission?.granted) {
+      const result = await requestCameraPermission();
       if (!result.granted) {
         Alert.alert('Permission required', 'Camera access is needed to scan receipts.');
         return;
       }
     }
-    setStage('camera');
-  };
-
-  const handleCapture = async () => {
-    if (!cameraRef.current) return;
-    const photo = await cameraRef.current.takePictureAsync();
-    if (photo) {
-      setStage('processing');
-      // TODO: pass photo.uri to OCR service
-    }
+    router.push('/camera');
   };
 
   const handleUpload = async () => {
+    const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!mediaPermission.granted) {
+      Alert.alert('Permission required', 'Photo library access is needed to upload receipts.');
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.8,
@@ -45,47 +41,6 @@ export default function ScanScreen() {
     }
   };
 
-  if (stage === 'camera') {
-    return (
-      <View className="flex-1 bg-surface-black">
-        <CameraView ref={cameraRef} className="flex-1" facing="back" />
-        <View
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-          pointerEvents="box-none"
-        >
-          <View className="flex-row justify-between px-5" style={{ paddingTop: insets.top + 16 }}>
-            <Pressable
-              className="w-11 h-11 rounded-pill bg-surface/20 items-center justify-center"
-              onPress={() => setStage('idle')}
-              accessibilityRole="button"
-              accessibilityLabel="Close camera"
-            >
-              <X size={20} color="#FFFFFF" />
-            </Pressable>
-            <View className="bg-brand-lime rounded-pill px-3 py-1 self-start">
-              <Text className="font-heading text-[11px] text-brand-lime-ink">Auto</Text>
-            </View>
-          </View>
-        </View>
-
-        <View
-          style={{ position: 'absolute', bottom: 32, left: 0, right: 0 }}
-          pointerEvents="box-none"
-          className="items-center"
-        >
-          <Pressable
-            className="w-20 h-20 rounded-pill bg-surface/30 items-center justify-center border-4 border-surface/50"
-            onPress={handleCapture}
-            accessibilityRole="button"
-            accessibilityLabel="Capture receipt"
-          >
-            <View className="w-16 h-16 rounded-pill bg-surface" />
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
-
   if (stage === 'processing') {
     return (
       <View className="flex-1 bg-canvas items-center justify-center">
@@ -95,6 +50,14 @@ export default function ScanScreen() {
           Processing receipt...
         </Text>
         <Text className="text-sm text-ink-muted mt-1">Extracting items</Text>
+        <Pressable
+          className="mt-10 px-6 h-12 rounded-pill bg-surface items-center justify-center active:opacity-80"
+          onPress={() => setStage('idle')}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel"
+        >
+          <Text className="font-heading text-[15px] text-ink">Cancel</Text>
+        </Pressable>
       </View>
     );
   }

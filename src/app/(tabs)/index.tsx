@@ -24,7 +24,7 @@ export default function DashboardScreen() {
             <Text className='font-body text-[13px] leading-[18px] text-ink-muted'>
               Welcome back
             </Text>
-            <Text className='font-heading text-[17px] leading-[22px] text-ink'>Orbix Studio</Text>
+            <Text className='font-heading text-[17px] leading-[22px] text-ink'>Funmi</Text>
           </View>
           <View className='flex-row items-center gap-3'>
             <IconCircle

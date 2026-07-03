@@ -38,6 +38,7 @@ export default function RootLayout() {
         <View className="flex-1 bg-canvas">
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="camera" options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="group/[id]" options={{ presentation: 'card' }} />
             <Stack.Screen name="expense/new" options={{ presentation: 'modal' }} />
             <Stack.Screen name="expense/[id]" options={{ presentation: 'card' }} />
