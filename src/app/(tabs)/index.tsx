@@ -1,12 +1,11 @@
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, Menu, Camera } from 'lucide-react-native';
-import { GradientBackdrop, Card, Tag, AvatarStack, IconCircle } from '@/components/ui';
+import { Search, Menu, Plus, Users, ArrowRight } from 'lucide-react-native';
+import { GradientBackdrop, Card, Tag, IconCircle } from '@/components/ui';
 
-const DEMO_AVATARS = [
-  { name: 'Alice', uri: null, bgColor: '#F3B7C3' },
-  { name: 'Bob', uri: null, bgColor: '#D6F5D0' },
-  { name: 'Charlie', uri: null, bgColor: '#DCD1F4' },
+const SAMPLE_GROUPS = [
+  { id: '1', name: 'Flat 4', memberCount: 4, balance: 120.5 },
+  { id: '2', name: 'Ibiza Trip', memberCount: 6, balance: -45.0 },
 ];
 
 export default function DashboardScreen() {
@@ -47,59 +46,81 @@ export default function DashboardScreen() {
 
         <View className="mb-6">
           <Text className="font-body text-[28px] leading-[34px] text-ink">
-            Get your <Text className="font-display">tokens</Text>
+            Get your <Text className="font-display">split</Text>
           </Text>
           <Text className="font-body text-[28px] leading-[34px] text-ink">
-            <Text className="font-display">Swipe</Text> to friends
+            Swipe <Text className="font-display">to settle</Text>
           </Text>
         </View>
 
-        <View className="flex-row justify-between items-start mb-8">
-          <View className="items-start">
-            <View className="flex-row items-start">
-              <Text className="font-display text-[56px] leading-[60px] text-ink">
-                24
-              </Text>
-              <View className="bg-accent-amber rounded-pill px-2.5 py-1 -rotate-6 mt-2 ml-1">
-                <Text className="font-heading text-[10px] text-ink">Swiped</Text>
+        <View className="flex-row items-start mb-10">
+          <Text className="font-display text-[56px] leading-[60px] text-ink">
+            $75.50
+          </Text>
+          <View className="bg-accent-amber rounded-pill px-2.5 py-1 -rotate-6 mt-2 ml-1">
+            <Text className="font-heading text-[10px] text-ink">Owed</Text>
+          </View>
+        </View>
+
+        <View className="mb-6">
+          <Text className="text-xs text-ink-muted font-heading uppercase tracking-wide mb-3">
+            Your Groups
+          </Text>
+          <View className="gap-3">
+            {SAMPLE_GROUPS.map((group) => (
+              <Card key={group.id} variant="hero" className="flex-row items-center">
+                <View className="w-12 h-12 rounded-pill bg-pastel-lilac items-center justify-center">
+                  <Users size={22} color="#5B4A9E" />
+                </View>
+                <View className="flex-1 ml-3">
+                  <Text className="font-heading text-[17px] text-ink">{group.name}</Text>
+                  <Text className="text-sm text-ink-muted">{group.memberCount} members</Text>
+                </View>
+                <View className="items-end">
+                  <Text className="font-display text-lg text-ink">
+                    ${Math.abs(group.balance)}
+                  </Text>
+                  <Text
+                    className={`text-xs font-medium ${group.balance >= 0 ? 'text-success' : 'text-danger'}`}
+                  >
+                    {group.balance >= 0 ? 'You are owed' : 'You owe'}
+                  </Text>
+                </View>
+              </Card>
+            ))}
+            <Pressable className="flex-row items-center rounded-xl bg-surface p-5 gap-3 border border-dashed border-line active:opacity-80">
+              <View className="w-12 h-12 rounded-pill bg-canvas-alt items-center justify-center">
+                <Plus size={22} color="#8A8791" />
               </View>
-            </View>
-          </View>
-
-          <View className="items-end mt-1">
-            <Text className="text-[12px] text-ink-muted font-medium mb-2">
-              Your Swiped group
-            </Text>
-            <AvatarStack avatars={DEMO_AVATARS} max={3} size={36} />
+              <Text className="flex-1 font-heading text-[17px] text-ink-muted">
+                Create new group
+              </Text>
+              <ArrowRight size={18} color="#8A8791" />
+            </Pressable>
           </View>
         </View>
 
-        <Card variant="hero" className="mb-4">
-          <Text className="font-heading text-[22px] leading-[28px] text-ink">
-            Strawberry{'\n'}Milkshake
+        <View>
+          <Text className="text-xs text-ink-muted font-heading uppercase tracking-wide mb-3">
+            Recent Activity
           </Text>
-
-          <View className="flex-row items-center gap-2 mt-1">
-            <Tag label="Swipedrinks Festival" variant="pastel-pink" />
-            <Text className="text-[12px] text-ink-muted">{'>'}</Text>
-          </View>
-
-          <View className="items-end mt-2">
-            <View
-              className="rounded-lg overflow-hidden bg-pastel-pink items-center justify-center"
-              style={{ width: 150, height: 150 }}
-            >
-              <Text className="text-[48px]">🍓</Text>
+          <Card variant="hero">
+            <View className="flex-row items-center gap-3">
+              <View className="w-10 h-10 rounded-pill bg-pastel-mint items-center justify-center">
+                <Text className="font-heading text-sm text-pastel-mint-ink">F</Text>
+              </View>
+              <View className="flex-1">
+                <Text className="font-medium text-[15px] text-ink">Dinner at Nobu</Text>
+                <Text className="text-sm text-ink-muted">Flat 4 • 2h ago</Text>
+              </View>
+              <Text className="font-display text-lg text-ink">$42.50</Text>
             </View>
-          </View>
-
-          <View className="flex-row items-center gap-3 mt-4">
-            <Text className="font-heading text-[15px] text-ink">Swipe{'\n'}Now</Text>
-            <View className="bg-surface-black rounded-pill w-12 h-12 items-center justify-center">
-              <Camera size={20} color="#FFFFFF" />
+            <View className="flex-row items-center gap-2 mt-3">
+              <Tag label="Paid by you" variant="pastel-sky" />
+              <Text className="text-sm text-ink-muted">Split 3 ways</Text>
             </View>
-          </View>
-        </Card>
+          </Card>
+        </View>
       </ScrollView>
     </View>
   );
