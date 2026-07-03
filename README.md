@@ -1,56 +1,35 @@
-# Welcome to your Expo app 👋
+# Splitr
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A Mobile app that scans receipts with OCR and splits bills among friends and roommates in real time. Built for a hackathon.
 
-## Get started
+## Tech Stack
 
-1. Install dependencies
+- **Framework:** React Native via Expo SDK 57
+- **OCR:** Google ML Kit (`@react-native-ml-kit/text-recognition`)
+- **Backend:** Supabase (Supbase + Auth)
+- **State:** Zustand
+- **Navigation:** Expo Router v4 (file-based)
+- **Styling:** Tailwind CSS v4 via uniwind
+- **Notifications:** Expo Push Notifications
+- **Payments:** PayPal / Revolut deep links (optional)
 
-   ```bash
-   npm install
-   ```
+## Core Features
 
-2. Start the app
+- **Receipt Scanning** — Point camera at a receipt; OCR extracts line items, prices, tax, and tip. Confidence scoring flags low-accuracy results. Supports image upload and email forwarding.
+- **Bill Splitting** — Equal, itemised, percentage, and custom ratio splits. Tax/tip handled separately. Round-up/down logic for leftover pennies. IOU tracking.
+- **Debt Simplification** — Calculates the minimum number of transactions to settle all debts in a group (e.g. 6 people → 3 payments instead of 15). This is a key demo feature.
+- **Group & Expense Management** — Named groups, member management, recurring bills, expense categories with analytics, full audit history, receipt photo attachment, locked expenses requiring group approval.
+- **Social & Settlement** — Push reminder nudges, in-app payment requests, "Settle up" button, group comments, CSV/PDF export.
 
-   ```bash
-   npx expo start
-   ```
+## Key Screens
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. **Onboarding / Auth** — Sign up, log in, profile setup
+2. **Dashboard** — All groups, total owed / owed to you summary
+3. **Group View** — Member list, expense feed, net balances, Settle Up
+4. **Add Expense** — Manual entry or scan receipt
+5. **Receipt Scanner** — Camera → OCR → item assignment
+6. **Split Editor** — Choose split type, assign per-person amounts
+7. **Expense Detail** — Full breakdown, receipt photo, comments
+8. **Settle Up** — Simplified debt transactions to execute
+9. **Analytics** — Spending by category, over time, per person
+10. **Settings** — Currency, notifications, payment methods
