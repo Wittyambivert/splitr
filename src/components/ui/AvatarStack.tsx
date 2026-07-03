@@ -4,6 +4,7 @@ import { getInitials } from '@/utils';
 interface AvatarItem {
   uri?: string | null;
   name: string;
+  bgColor?: string;
 }
 
 interface AvatarStackProps {
@@ -21,12 +22,13 @@ export function AvatarStack({ avatars, max = 4, size = 36 }: AvatarStackProps) {
       {visible.map((avatar, index) => (
         <View
           key={index}
-          className="rounded-pill bg-canvas-alt items-center justify-center border-2 border-surface"
+          className="rounded-pill items-center justify-center border-2 border-surface"
           style={{
             width: size,
             height: size,
             marginLeft: index === 0 ? 0 : -8,
             zIndex: visible.length - index,
+            backgroundColor: avatar.bgColor ?? '#EDEBF2',
           }}
         >
           <Text className="font-heading text-[11px] text-ink-muted">
