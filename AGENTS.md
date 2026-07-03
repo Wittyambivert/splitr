@@ -5,7 +5,8 @@
 - **Expo SDK 57** with React Native 0.86, React 19.2.3, TypeScript ~6.0.3
 - Read exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code
 - **No `tailwind.config.js`** — Tailwind v4 is CSS-first via `@theme` in `src/global.css`
-- Use `className` with Tailwind utilities via uniwind; never hardcode raw hex/pixel values in components
+- Use `className` with Tailwind utilities via **uniwind** (configured in `metro.config.js`); never hardcode raw hex/pixel values in components
+- All Tailwind theme tokens live in `src/global.css` — `global.css` is imported once at `app/_layout.tsx` route level
 - All new files **must** be TypeScript — no `any`, no `// @ts-nocheck`
 
 ## 2. Architecture
@@ -29,7 +30,7 @@ src/
   components/
     ui/                 # Design system primitives (Button, Card, Tag, etc.)
   stores/               # Zustand stores
-  services/             # Firebase, OCR, Notification services
+  services/             # Supabase, Auth, OCR, Notification services
   utils/                # Pure functions (debtSimplifier, splitting, formatting)
   types/                # TypeScript interfaces
   theme/                # Design tokens (colors, typography, spacing)
@@ -40,6 +41,7 @@ assets/                 # Fonts, images, icons
 
 ### File-based Routing Rules
 
+- `metro.config.js` uses `withUniwindConfig()` to compile Tailwind CSS v4 classes to native styles at build time
 - `(tabs)/` is a route group — its `_layout.tsx` renders the custom floating bottom tab bar
 - Screens inside `(tabs)/_layout.tsx` get the tab bar automatically
 - Screens outside `(tabs)/` (eg `group/[id].tsx`) use `<Stack.Screen>` in root `_layout.tsx` with appropriate `presentation` (`card`, `modal`)
@@ -187,16 +189,17 @@ Stores in `src/stores/` — each is a single Zustand `create()` call with action
 
 ## 6. Services (src/services/)
 
-- `firebase.ts` — singleton Firebase app, auth, db, storage initializers using `EXPO_PUBLIC_*` env vars
-- `auth.ts` — `signIn`, `signUp`, `signOutUser`, `subscribeToAuthChanges`
+- `supabase.ts` — singleton Supabase client using `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` env vars
+- `auth.ts` — `signIn`, `signUp`, `signOutUser`, `subscribeToAuthChanges` via Supabase Auth
 - `ocr.ts` — `scanReceipt(imageUri)` using `@react-native-ml-kit/text-recognition`, returns `OcrResult`
 - `notifications.ts` — push token registration, send reminders via Expo push API
 
-**Firebase rules:**
-- Use `getFirestoreDb()`, `getFirebaseAuth()` lazy singletons — never `initializeApp()` more than once
-- All Firestore reads use `onSnapshot` for real-time updates
-- Paginate expense lists with `limit(20)` and `startAfter`
-- Write `serverTimestamp()` for `createdAt` fields
+**Supabase rules:**
+- Use `getSupabaseClient()` lazy singleton — never `createClient()` more than once
+- All Supabase reads use real-time `postgres_changes` subscriptions for live updates via RealtimeChannel
+- Paginate expense lists with `.limit(20)` and `.range()`
+- Use `SupabaseClient.from()` for all queries — never raw SQL
+- Auth session is persisted via AsyncStorage; use `onAuthStateChange` for reactive auth
 
 ## 7. Debt Simplification Algorithm
 
@@ -249,8 +252,8 @@ calculateSplit({ totalAmount, memberIds, splitType, percentages?, itemAmounts? }
 
 ### Performance
 - OCR is async + slow — show loading spinner while scanning
-- Firestore expense lists: paginate with `limit(20)`
-- Use `useCallback` for Firestore query functions passed to `onSnapshot`
+- Supabase expense lists: paginate with `.limit(20)` and `.range()`
+- Use `useCallback` for Supabase query functions
 - Minimize re-renders: select granular Zustand slices, not full stores
 
 ### Accessibility
@@ -287,7 +290,7 @@ calculateSplit({ totalAmount, memberIds, splitType, percentages?, itemAmounts? }
 - **Imports**: `@/` path alias for all source files (`@/components/ui/Button`, `@/stores`, `@/utils`)
 - **Import order**: React → Expo → 3rd party → `@/` internal → local constants
 - **Commits**: Concise, descriptive, match existing repo style
-- **Types**: Every Firestore document gets a TypeScript interface; every API function has typed params and return
+- **Types**: Every database row gets a TypeScript interface; every API function has typed params and return
 - **Error handling**: Wrap async calls in try/catch; surface errors through Zustand store `error` fields
 - **Testing**: Jest unit tests for all utils (splitting, debt algorithm, formatting); no UI tests for hackathon
 
@@ -298,7 +301,8 @@ UI: `lucide-react-native`, `expo-linear-gradient`
 State: `zustand`
 Camera: `expo-camera`
 OCR: `@react-native-ml-kit/text-recognition`
-Backend: `firebase` (auth, firestore, storage)
+Backend: `@supabase/supabase-js` (auth, database, real-time)
+Styling: `uniwind` + `tailwindcss` (Tailwind v4 CSS → RN)
 Notifications: `expo-notifications`
 Fonts: `expo-font`
 Animation: `react-native-reanimated`, `react-native-gesture-handler`
@@ -308,6 +312,13 @@ Safe area: `react-native-safe-area-context`
 
 Must use `expo-router` plugin, `typedRoutes: true`, `reactCompiler: true` experiments.
 Font assets are loaded from `assets/fonts/` — all 4 PlusJakartaSans weights required.
+
+### Uniwind / Tailwind Config Notes
+- `metro.config.js` wraps config with `withUniwindConfig()`, pointing `cssEntryFile` at `./src/global.css`
+- `global.css` must contain `@import 'tailwindcss'` and `@import 'uniwind'` at the top
+- All theme tokens live in `@theme` block inside `global.css` — no `tailwind.config.js` file
+- A `src/uniwind-types.d.ts` file is auto-generated by Metro for full TypeScript intellisense
+- Animations use `tailwindcss-animate` utility classes (paired with Reanimated for gestures)
 
 ## 14. Build & Run
 

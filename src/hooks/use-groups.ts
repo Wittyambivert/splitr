@@ -1,95 +1,143 @@
-import { useCallback } from 'react';
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  addDoc,
-  doc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
-  orderBy,
-} from 'firebase/firestore';
-import { getFirestoreDb } from '@/services';
+import { useCallback, useEffect, useRef } from 'react';
+import { getSupabaseClient } from '@/services/supabase';
 import { useGroupStore, useAuthStore } from '@/stores';
 import type { Group } from '@/types';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export function useGroups() {
-  const { groups, isLoading, setGroups, addGroup, updateGroup, removeGroup, setLoading, setError } = useGroupStore();
+  const { groups, isLoading, setGroups, addGroup, updateGroup, removeGroup, setLoading, setError } =
+    useGroupStore();
   const user = useAuthStore((state) => state.user);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   const subscribeToGroups = useCallback(() => {
-    if (!user?.uid) return () => {};
+    if (!user?.uid) return;
 
-    const db = getFirestoreDb();
-    const q = query(
-      collection(db, 'groups'),
-      where('members', 'array-contains', user.uid),
-      orderBy('createdAt', 'desc'),
-    );
+    const supabase = getSupabaseClient();
+    setLoading(true);
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const groupsData = snapshot.docs.map((doc) => ({
-          ...doc.data(),
-          groupId: doc.id,
-        })) as Group[];
-        setGroups(groupsData);
-      },
-      (err) => {
-        setError(err.message);
-      },
-    );
+    supabase
+      .from('group_members')
+      .select('group_id')
+      .eq('user_id', user.uid)
+      .then(async ({ data: memberships, error: membershipError }) => {
+        if (membershipError) {
+          setError(membershipError.message);
+          return;
+        }
 
-    return unsubscribe;
-  }, [user?.uid, setGroups, setError]);
+        const groupIds = memberships?.map((m) => m.group_id) ?? [];
 
-  const createGroup = useCallback(
-    async (name: string, members: string[], currency: string = 'USD') => {
-      if (!user?.uid) throw new Error('Not authenticated');
+        if (groupIds.length === 0) {
+          setGroups([]);
+          return;
+        }
 
-      const db = getFirestoreDb();
-      const allMembers = [...new Set([...members, user.uid])];
+        const { data: groupsData, error: groupsError } = await supabase
+          .from('groups')
+          .select('*')
+          .in('id', groupIds)
+          .order('created_at', { ascending: false });
 
-      const docRef = await addDoc(collection(db, 'groups'), {
-        name,
-        members: allMembers,
-        createdBy: user.uid,
-        createdAt: serverTimestamp(),
-        currency,
+        if (groupsError) {
+          setError(groupsError.message);
+          return;
+        }
+
+        const mapped = (groupsData ?? []).map((g) => ({
+          groupId: g.id,
+          name: g.name,
+          members: g.member_ids ?? [],
+          createdBy: g.created_by,
+          createdAt: new Date(g.created_at).getTime(),
+          currency: g.currency ?? 'USD',
+        }));
+        setGroups(mapped);
       });
 
-      return docRef.id;
+    channelRef.current = supabase
+      .channel('groups-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'groups' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const g = payload.new as Record<string, unknown>;
+            addGroup({
+              groupId: g.id as string,
+              name: g.name as string,
+              members: (g.member_ids as string[]) ?? [],
+              createdBy: g.created_by as string,
+              createdAt: new Date(g.created_at as string).getTime(),
+              currency: (g.currency as string) ?? 'USD',
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const g = payload.new as Record<string, unknown>;
+            updateGroup(g.id as string, {
+              name: g.name as string,
+              members: (g.member_ids as string[]) ?? [],
+              currency: (g.currency as string) ?? 'USD',
+            });
+          } else if (payload.eventType === 'DELETE') {
+            const old = payload.old as Record<string, unknown>;
+            removeGroup(old.id as string);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      channelRef.current?.unsubscribe();
+    };
+  }, [user?.uid, setGroups, addGroup, updateGroup, removeGroup, setLoading, setError]);
+
+  useEffect(() => {
+    const cleanup = subscribeToGroups();
+    return () => cleanup?.();
+  }, [subscribeToGroups]);
+
+  const createGroup = useCallback(
+    async (name: string, memberIds: string[], currency: string = 'USD') => {
+      if (!user?.uid) throw new Error('Not authenticated');
+
+      const supabase = getSupabaseClient();
+      const allMembers = [...new Set([...memberIds, user.uid])];
+
+      const { data, error } = await supabase
+        .from('groups')
+        .insert({
+          name,
+          member_ids: allMembers,
+          created_by: user.uid,
+          currency,
+        })
+        .select('id')
+        .single();
+
+      if (error) throw error;
+
+      const memberRows = allMembers.map((uid) => ({
+        group_id: data.id,
+        user_id: uid,
+      }));
+
+      const { error: memberError } = await supabase.from('group_members').insert(memberRows);
+      if (memberError) throw memberError;
+
+      return data.id as string;
     },
     [user?.uid],
   );
 
-  const editGroup = useCallback(
-    async (groupId: string, updates: Partial<Group>) => {
-      const db = getFirestoreDb();
-      await updateDoc(doc(db, 'groups', groupId), updates);
-      updateGroup(groupId, updates);
-    },
-    [updateGroup],
-  );
-
   const deleteGroup = useCallback(
     async (groupId: string) => {
-      const db = getFirestoreDb();
-      await deleteDoc(doc(db, 'groups', groupId));
+      const supabase = getSupabaseClient();
+      const { error } = await supabase.from('groups').delete().eq('id', groupId);
+      if (error) throw error;
       removeGroup(groupId);
     },
     [removeGroup],
   );
 
-  return {
-    groups,
-    isLoading,
-    subscribeToGroups,
-    createGroup,
-    editGroup,
-    deleteGroup,
-  };
+  return { groups, isLoading, subscribeToGroups, createGroup, deleteGroup };
 }

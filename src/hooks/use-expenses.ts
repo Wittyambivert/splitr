@@ -1,22 +1,8 @@
-import { useCallback } from 'react';
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  addDoc,
-  doc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
-  orderBy,
-  limit,
-  startAfter,
-  type DocumentSnapshot,
-} from 'firebase/firestore';
-import { getFirestoreDb } from '@/services';
+import { useCallback, useEffect, useRef } from 'react';
+import { getSupabaseClient } from '@/services/supabase';
 import { useExpenseStore, useAuthStore } from '@/stores';
-import type { Expense } from '@/types';
+import type { Expense, ExpenseSplit } from '@/types';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 const PAGE_SIZE = 20;
 
@@ -25,73 +11,136 @@ export function useExpenses(groupId: string) {
     useExpenseStore();
   const user = useAuthStore((state) => state.user);
   const groupExpenses = expenses[groupId] ?? [];
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   const subscribeToExpenses = useCallback(() => {
-    if (!groupId) return () => {};
+    if (!groupId) return;
 
-    const db = getFirestoreDb();
-    const q = query(
-      collection(db, 'groups', groupId, 'expenses'),
-      orderBy('createdAt', 'desc'),
-      limit(PAGE_SIZE),
-    );
+    const supabase = getSupabaseClient();
+    setLoading(true);
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const expensesData = snapshot.docs.map((doc) => ({
-          ...doc.data(),
-          expenseId: doc.id,
-        })) as Expense[];
-        setExpenses(groupId, expensesData);
-      },
-      (err) => {
-        setError(err.message);
-      },
-    );
+    supabase
+      .from('expenses')
+      .select('*')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: false })
+      .limit(PAGE_SIZE)
+      .then(({ data, error }) => {
+        if (error) {
+          setError(error.message);
+          return;
+        }
 
-    return unsubscribe;
-  }, [groupId, setExpenses, setError]);
+        const mapped = (data ?? []).map(mapExpense);
+        setExpenses(groupId, mapped);
+      });
+
+    channelRef.current = supabase
+      .channel(`expenses-${groupId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'expenses',
+          filter: `group_id=eq.${groupId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            addExpense(groupId, mapExpense(payload.new as Record<string, unknown>));
+          } else if (payload.eventType === 'UPDATE') {
+            const e = payload.new as Record<string, unknown>;
+            updateExpense(groupId, e.id as string, mapExpenseData(e));
+          } else if (payload.eventType === 'DELETE') {
+            const old = payload.old as Record<string, unknown>;
+            removeExpense(groupId, old.id as string);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      channelRef.current?.unsubscribe();
+    };
+  }, [groupId, setExpenses, addExpense, updateExpense, removeExpense, setLoading, setError]);
+
+  useEffect(() => {
+    const cleanup = subscribeToExpenses();
+    return () => cleanup?.();
+  }, [subscribeToExpenses]);
 
   const createExpense = useCallback(
     async (expenseData: Omit<Expense, 'expenseId' | 'createdAt'>) => {
       if (!user?.uid) throw new Error('Not authenticated');
 
-      const db = getFirestoreDb();
-      const docRef = await addDoc(collection(db, 'groups', groupId, 'expenses'), {
-        ...expenseData,
-        createdAt: serverTimestamp(),
-      });
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from('expenses')
+        .insert({
+          group_id: groupId,
+          title: expenseData.title,
+          total_amount: expenseData.totalAmount,
+          currency: expenseData.currency,
+          category: expenseData.category,
+          paid_by: expenseData.paidBy,
+          split_type: expenseData.splitType,
+          splits: expenseData.splits,
+          receipt_image_url: expenseData.receiptImageUrl,
+          ocr_items: expenseData.ocrItems,
+          locked: expenseData.locked,
+          notes: expenseData.notes,
+          created_by: user.uid,
+        })
+        .select('id')
+        .single();
 
-      return docRef.id;
+      if (error) throw error;
+      return data.id as string;
     },
     [groupId, user?.uid],
   );
 
-  const editExpense = useCallback(
-    async (expenseId: string, updates: Partial<Expense>) => {
-      const db = getFirestoreDb();
-      await updateDoc(doc(db, 'groups', groupId, 'expenses', expenseId), updates);
-      updateExpense(groupId, expenseId, updates);
-    },
-    [groupId, updateExpense],
-  );
-
   const removeExpenseFromGroup = useCallback(
     async (expenseId: string) => {
-      const db = getFirestoreDb();
-      await deleteDoc(doc(db, 'groups', groupId, 'expenses', expenseId));
+      const supabase = getSupabaseClient();
+      const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
+      if (error) throw error;
       removeExpense(groupId, expenseId);
     },
     [groupId, removeExpense],
   );
 
+  return { expenses: groupExpenses, isLoading, subscribeToExpenses, createExpense, removeExpense: removeExpenseFromGroup };
+}
+
+function mapExpense(row: Record<string, unknown>): Expense {
   return {
-    expenses: groupExpenses,
-    isLoading,
-    subscribeToExpenses,
-    createExpense,
-    editExpense,
-    removeExpense: removeExpenseFromGroup,
+    expenseId: row.id as string,
+    groupId: row.group_id as string,
+    title: row.title as string,
+    totalAmount: row.total_amount as number,
+    currency: (row.currency as string) ?? 'USD',
+    category: (row.category as Expense['category']) ?? 'other',
+    paidBy: row.paid_by as string,
+    splits: (row.splits as ExpenseSplit[]) ?? [],
+    splitType: (row.split_type as Expense['splitType']) ?? 'equal',
+    receiptImageUrl: (row.receipt_image_url as string | null) ?? null,
+    ocrItems: (row.ocr_items as Expense['ocrItems']) ?? [],
+    createdAt: new Date(row.created_at as string).getTime(),
+    locked: (row.locked as boolean) ?? false,
+    notes: (row.notes as string | null) ?? null,
+  };
+}
+
+function mapExpenseData(row: Record<string, unknown>): Partial<Expense> {
+  return {
+    title: row.title as string,
+    totalAmount: row.total_amount as number,
+    category: row.category as Expense['category'],
+    splits: row.splits as ExpenseSplit[],
+    receiptImageUrl: row.receipt_image_url as string | null,
+    ocrItems: row.ocr_items as Expense['ocrItems'],
+    locked: row.locked as boolean,
+    notes: row.notes as string | null,
   };
 }
