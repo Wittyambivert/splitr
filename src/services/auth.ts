@@ -1,86 +1,85 @@
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  updateProfile,
-  type User as FirebaseUser,
-} from 'firebase/auth';
-import {
-  doc,
-  getDoc,
-  setDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { getFirebaseAuth, getFirestoreDb } from './firebase';
+import { getSupabaseClient } from './supabase';
 import type { User } from '@/types';
 import { useAuthStore } from '@/stores';
 
-function mapFirebaseUser(firebaseUser: FirebaseUser): User {
+function mapSupabaseUser(sbUser: { id: string; email?: string | null; user_metadata?: { full_name?: string; avatar_url?: string | null } }): User {
   return {
-    uid: firebaseUser.uid,
-    displayName: firebaseUser.displayName ?? 'User',
-    email: firebaseUser.email ?? '',
-    photoURL: firebaseUser.photoURL,
+    uid: sbUser.id,
+    displayName: sbUser.user_metadata?.full_name ?? sbUser.email?.split('@')[0] ?? 'User',
+    email: sbUser.email ?? '',
+    photoURL: sbUser.user_metadata?.avatar_url ?? null,
     groups: [],
     createdAt: Date.now(),
   };
 }
 
 export async function signUp(email: string, password: string, displayName: string): Promise<User> {
-  const auth = getFirebaseAuth();
-  const db = getFirestoreDb();
-
-  const credential = await createUserWithEmailAndPassword(auth, email, password);
-  await updateProfile(credential.user, { displayName });
-
-  const user = mapFirebaseUser(credential.user);
-  await setDoc(doc(db, 'users', user.uid), {
-    ...user,
-    createdAt: serverTimestamp(),
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { full_name: displayName } },
   });
 
+  if (error) throw error;
+  if (!data.user) throw new Error('Sign-up failed');
+
+  const user = mapSupabaseUser(data.user);
+  const { error: profileError } = await supabase.from('profiles').insert({
+    id: user.uid,
+    display_name: displayName,
+    email: user.email,
+    photo_url: user.photoURL,
+  });
+
+  if (profileError) throw profileError;
   return user;
 }
 
 export async function signIn(email: string, password: string): Promise<User> {
-  const auth = getFirebaseAuth();
-  const credential = await signInWithEmailAndPassword(auth, email, password);
-  const db = getFirestoreDb();
-  const userDoc = await getDoc(doc(db, 'users', credential.user.uid));
-
-  if (userDoc.exists()) {
-    return userDoc.data() as User;
-  }
-
-  return mapFirebaseUser(credential.user);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  if (!data.user) throw new Error('Sign-in failed');
+  return mapSupabaseUser(data.user);
 }
 
 export async function signOutUser(): Promise<void> {
-  const auth = getFirebaseAuth();
-  await signOut(auth);
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
   useAuthStore.getState().reset();
 }
 
 export function subscribeToAuthChanges(): () => void {
-  const auth = getFirebaseAuth();
-
-  const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+  const supabase = getSupabaseClient();
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
     const store = useAuthStore.getState();
 
-    if (firebaseUser) {
-      const db = getFirestoreDb();
-      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+    if (session?.user) {
+      const supabaseClient = getSupabaseClient();
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
 
-      if (userDoc.exists()) {
-        store.setUser(userDoc.data() as User);
-      } else {
-        store.setUser(mapFirebaseUser(firebaseUser));
-      }
+      const user: User = profile
+        ? {
+            uid: profile.id,
+            displayName: profile.display_name,
+            email: profile.email,
+            photoURL: profile.photo_url,
+            groups: profile.group_ids ?? [],
+            createdAt: new Date(profile.created_at).getTime(),
+          }
+        : mapSupabaseUser(session.user);
+
+      store.setUser(user);
     } else {
       store.setUser(null);
     }
   });
 
-  return unsubscribe;
+  return () => subscription.unsubscribe();
 }
