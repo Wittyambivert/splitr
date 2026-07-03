@@ -1,25 +1,24 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { getSupabaseClient } from '@/services/supabase';
-import { useGroupStore, useAuthStore } from '@/stores';
+import { useGroupStore } from '@/stores';
 import type { Group } from '@/types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+
+const MOCK_UID = 'mock-user-1';
 
 export function useGroups() {
   const { groups, isLoading, setGroups, addGroup, updateGroup, removeGroup, setLoading, setError } =
     useGroupStore();
-  const user = useAuthStore((state) => state.user);
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   const subscribeToGroups = useCallback(() => {
-    if (!user?.uid) return;
-
     const supabase = getSupabaseClient();
     setLoading(true);
 
     supabase
       .from('group_members')
       .select('group_id')
-      .eq('user_id', user.uid)
+      .eq('user_id', MOCK_UID)
       .then(async ({ data: memberships, error: membershipError }) => {
         if (membershipError) {
           setError(membershipError.message);
@@ -89,7 +88,7 @@ export function useGroups() {
     return () => {
       channelRef.current?.unsubscribe();
     };
-  }, [user?.uid, setGroups, addGroup, updateGroup, removeGroup, setLoading, setError]);
+  }, [setGroups, addGroup, updateGroup, removeGroup, setLoading, setError]);
 
   useEffect(() => {
     const cleanup = subscribeToGroups();
@@ -98,17 +97,15 @@ export function useGroups() {
 
   const createGroup = useCallback(
     async (name: string, memberIds: string[], currency: string = 'USD') => {
-      if (!user?.uid) throw new Error('Not authenticated');
-
       const supabase = getSupabaseClient();
-      const allMembers = [...new Set([...memberIds, user.uid])];
+      const allMembers = [...new Set([...memberIds, MOCK_UID])];
 
       const { data, error } = await supabase
         .from('groups')
         .insert({
           name,
           member_ids: allMembers,
-          created_by: user.uid,
+          created_by: MOCK_UID,
           currency,
         })
         .select('id')
@@ -126,7 +123,7 @@ export function useGroups() {
 
       return data.id as string;
     },
-    [user?.uid],
+    [],
   );
 
   const deleteGroup = useCallback(

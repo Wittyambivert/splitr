@@ -1,15 +1,10 @@
-import { useEffect } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Link } from 'expo-router';
-import { Plus, Hand, MoreVertical } from 'lucide-react-native';
-import { GradientBackdrop, Card, Tag, StatDisplay, ListRow, IconCircle } from '@/components/ui';
-import { useAuth } from '@/hooks';
+import { router } from 'expo-router';
+import { Plus } from 'lucide-react-native';
+import { GradientBackdrop, Card, Tag, StatDisplay, IconCircle } from '@/components/ui';
 
 export default function DashboardScreen() {
-  const { user } = useAuth();
-
   return (
     <View className="flex-1 bg-canvas">
       <GradientBackdrop variant="frame" opacity={0.35} />
@@ -28,9 +23,7 @@ export default function DashboardScreen() {
                 Swipe <Text className="font-display">to settle</Text>
               </Text>
             </View>
-            <Link href="/expense/new" asChild>
-              <IconCircle icon={Plus} variant="surface" accessibilityLabel="Add expense" onPress={() => {}} />
-            </Link>
+            <IconCircle icon={Plus} variant="surface" accessibilityLabel="Add expense" onPress={() => router.push('/expense/new')} />
           </View>
 
           <StatDisplay value="$0" label="Net balance" badgeLabel="Settled" />

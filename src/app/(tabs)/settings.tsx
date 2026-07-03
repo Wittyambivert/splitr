@@ -1,8 +1,7 @@
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronRight, LogOut, CreditCard, Bell, DollarSign, Shield } from 'lucide-react-native';
-import { Card, ListRow } from '@/components/ui';
-import { useAuth } from '@/hooks';
+import { Card } from '@/components/ui';
 
 const SETTINGS_ITEMS = [
   { icon: CreditCard, label: 'Payment Methods', route: 'payment-methods' },
@@ -12,7 +11,6 @@ const SETTINGS_ITEMS = [
 ];
 
 export default function SettingsScreen() {
-  const { user, isAuthenticated } = useAuth();
 
   return (
     <View className="flex-1 bg-canvas">
@@ -26,12 +24,10 @@ export default function SettingsScreen() {
         >
           <Card variant="hero" className="items-center py-6">
             <View className="w-16 h-16 rounded-pill bg-pastel-lilac items-center justify-center mb-3">
-              <Text className="font-display text-2xl text-pastel-lilac-ink">
-                {user?.displayName?.charAt(0) ?? 'U'}
-              </Text>
+              <Text className="font-display text-2xl text-pastel-lilac-ink">U</Text>
             </View>
-            <Text className="font-heading text-[17px] text-ink">{user?.displayName ?? 'User'}</Text>
-            <Text className="text-sm text-ink-muted">{user?.email ?? ''}</Text>
+            <Text className="font-heading text-[17px] text-ink">User</Text>
+            <Text className="text-sm text-ink-muted">user@splitr.app</Text>
           </Card>
 
           <Card variant="hero" className="gap-0 p-0 overflow-hidden">

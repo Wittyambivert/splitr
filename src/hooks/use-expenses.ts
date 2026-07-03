@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { getSupabaseClient } from '@/services/supabase';
-import { useExpenseStore, useAuthStore } from '@/stores';
+import { useExpenseStore } from '@/stores';
 import type { Expense, ExpenseSplit } from '@/types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 const PAGE_SIZE = 20;
+const MOCK_UID = 'mock-user-1';
 
 export function useExpenses(groupId: string) {
   const { expenses, isLoading, setExpenses, addExpense, updateExpense, removeExpense, setLoading, setError } =
     useExpenseStore();
-  const user = useAuthStore((state) => state.user);
   const groupExpenses = expenses[groupId] ?? [];
   const channelRef = useRef<RealtimeChannel | null>(null);
 
@@ -71,8 +71,6 @@ export function useExpenses(groupId: string) {
 
   const createExpense = useCallback(
     async (expenseData: Omit<Expense, 'expenseId' | 'createdAt'>) => {
-      if (!user?.uid) throw new Error('Not authenticated');
-
       const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from('expenses')
@@ -89,7 +87,7 @@ export function useExpenses(groupId: string) {
           ocr_items: expenseData.ocrItems,
           locked: expenseData.locked,
           notes: expenseData.notes,
-          created_by: user.uid,
+          created_by: MOCK_UID,
         })
         .select('id')
         .single();
@@ -97,7 +95,7 @@ export function useExpenses(groupId: string) {
       if (error) throw error;
       return data.id as string;
     },
-    [groupId, user?.uid],
+    [groupId],
   );
 
   const removeExpenseFromGroup = useCallback(

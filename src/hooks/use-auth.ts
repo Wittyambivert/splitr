@@ -1,18 +1,12 @@
-import { useEffect } from 'react';
-import { useAuthStore } from '@/stores';
-import { subscribeToAuthChanges } from '@/services';
+const MOCK_USER = {
+  uid: 'mock-user-1',
+  displayName: 'You',
+  email: 'you@splitr.app',
+  photoURL: null,
+  groups: [],
+  createdAt: Date.now(),
+};
 
 export function useAuth() {
-  const { user, isLoading, error } = useAuthStore((state) => ({
-    user: state.user,
-    isLoading: state.isLoading,
-    error: state.error,
-  }));
-
-  useEffect(() => {
-    const unsubscribe = subscribeToAuthChanges();
-    return unsubscribe;
-  }, []);
-
-  return { user, isLoading, error, isAuthenticated: !!user };
+  return { user: MOCK_USER, isLoading: false, error: null, isAuthenticated: true };
 }
