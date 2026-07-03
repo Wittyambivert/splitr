@@ -3,14 +3,15 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
-import { View } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '@/global.css';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     'PlusJakartaSans-Regular': require('@/assets/fonts/PlusJakartaSans-Regular.ttf'),
     'PlusJakartaSans-Medium': require('@/assets/fonts/PlusJakartaSans-Medium.ttf'),
     'PlusJakartaSans-Bold': require('@/assets/fonts/PlusJakartaSans-Bold.ttf'),
@@ -18,24 +19,32 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded && !fontError) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F2F0F5' }}>
+        <ActivityIndicator size="large" color="#C6F24E" />
+      </View>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View className="flex-1 bg-canvas">
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="group/[id]" options={{ presentation: 'card' }} />
-          <Stack.Screen name="expense/new" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="expense/[id]" options={{ presentation: 'card' }} />
-        </Stack>
-        <StatusBar style="dark" />
-      </View>
+      <SafeAreaProvider>
+        <View className="flex-1 bg-canvas">
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="group/[id]" options={{ presentation: 'card' }} />
+            <Stack.Screen name="expense/new" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="expense/[id]" options={{ presentation: 'card' }} />
+          </Stack>
+          <StatusBar style="dark" />
+        </View>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
