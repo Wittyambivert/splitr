@@ -289,7 +289,7 @@ calculateSplit({ totalAmount, memberIds, splitType, percentages?, itemAmounts? }
 - **File exports**: Named exports only (`export function Foo()` not `export default`)
 - **Imports**: `@/` path alias for all source files (`@/components/ui/Button`, `@/stores`, `@/utils`)
 - **Import order**: React → Expo → 3rd party → `@/` internal → local constants
-- **Commits**: Concise, descriptive, match existing repo style
+- **Commits**: Every commit must follow **semantic commit messages** (`feat:`, `build:`, `docs:`, `chore:`, `fix:`, `refactor:`). Each new component, hook, service, store, package install, or screen must be committed **individually** — never batch unrelated changes into a single commit.
 - **Types**: Every database row gets a TypeScript interface; every API function has typed params and return
 - **Error handling**: Wrap async calls in try/catch; surface errors through Zustand store `error` fields
 - **Testing**: Jest unit tests for all utils (splitting, debt algorithm, formatting); no UI tests for hackathon
@@ -302,7 +302,7 @@ State: `zustand`
 Camera: `expo-camera`
 OCR: `@react-native-ml-kit/text-recognition`
 Backend: `@supabase/supabase-js` (auth, database, real-time)
-Styling: `uniwind` + `tailwindcss` (Tailwind v4 CSS → RN)
+Styling: `uniwind` + `tailwindcss` + `tw-animate-css` (Tailwind v4 CSS → RN)
 Notifications: `expo-notifications`
 Fonts: `expo-font`
 Animation: `react-native-reanimated`, `react-native-gesture-handler`
