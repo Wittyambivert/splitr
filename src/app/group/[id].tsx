@@ -77,8 +77,8 @@ export default function GroupDetailScreen() {
                   </View>
                   <Text className="font-medium text-[15px] text-ink">{member.displayName}</Text>
                 </View>
-                <Text className={`font-display text-base ${member.uid === '1' ? 'text-success' : 'text-danger'}`}>
-                  {member.uid === '1' ? '+$29.84' : '-$14.92'}
+                <Text className={`font-display text-lg ${member.uid === '1' ? 'text-success' : 'text-danger'}`}>
+                  {member.uid === '1' ? '+₦29.84' : '-₦14.92'}
                 </Text>
               </View>
             ))}

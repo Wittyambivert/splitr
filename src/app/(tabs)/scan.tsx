@@ -1,29 +1,64 @@
-import { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState, useRef } from 'react';
+import { View, Text, Pressable, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScanLine, ImagePlus, X } from 'lucide-react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Tag, Button } from '@/components/ui';
+import * as ImagePicker from 'expo-image-picker';
+import { GradientBackdrop, Tag } from '@/components/ui';
 
 type ScanStage = 'idle' | 'camera' | 'processing' | 'results';
 
 export default function ScanScreen() {
+  const cameraRef = useRef<CameraView>(null);
   const [stage, setStage] = useState<ScanStage>('idle');
   const [permission, requestPermission] = useCameraPermissions();
+  const insets = useSafeAreaInsets();
+
+  const handleScanPress = async () => {
+    if (!permission?.granted) {
+      const result = await requestPermission();
+      if (!result.granted) {
+        Alert.alert('Permission required', 'Camera access is needed to scan receipts.');
+        return;
+      }
+    }
+    setStage('camera');
+  };
+
+  const handleCapture = async () => {
+    if (!cameraRef.current) return;
+    const photo = await cameraRef.current.takePictureAsync();
+    if (photo) {
+      setStage('processing');
+      // TODO: pass photo.uri to OCR service
+    }
+  };
+
+  const handleUpload = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setStage('processing');
+      // TODO: pass result.assets[0].uri to OCR service
+    }
+  };
 
   if (stage === 'camera') {
     return (
       <View className="flex-1 bg-surface-black">
-        <CameraView
-          className="flex-1"
-          facing="back"
-          onBarcodeScanned={() => {}}
-        />
-        <SafeAreaView className="absolute inset-0" edges={['top']} pointerEvents="box-none">
-          <View className="flex-row justify-between px-5 pt-4">
+        <CameraView ref={cameraRef} className="flex-1" facing="back" />
+        <View
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          pointerEvents="box-none"
+        >
+          <View className="flex-row justify-between px-5" style={{ paddingTop: insets.top + 16 }}>
             <Pressable
               className="w-11 h-11 rounded-pill bg-surface/20 items-center justify-center"
               onPress={() => setStage('idle')}
+              accessibilityRole="button"
+              accessibilityLabel="Close camera"
             >
               <X size={20} color="#FFFFFF" />
             </Pressable>
@@ -31,10 +66,19 @@ export default function ScanScreen() {
               <Text className="font-heading text-[11px] text-brand-lime-ink">Auto</Text>
             </View>
           </View>
-        </SafeAreaView>
+        </View>
 
-        <View className="absolute bottom-8 left-0 right-0 items-center" pointerEvents="box-none">
-          <Pressable className="w-20 h-20 rounded-pill bg-surface/30 items-center justify-center border-4 border-surface/50">
+        <View
+          style={{ position: 'absolute', bottom: 32, left: 0, right: 0 }}
+          pointerEvents="box-none"
+          className="items-center"
+        >
+          <Pressable
+            className="w-20 h-20 rounded-pill bg-surface/30 items-center justify-center border-4 border-surface/50"
+            onPress={handleCapture}
+            accessibilityRole="button"
+            accessibilityLabel="Capture receipt"
+          >
             <View className="w-16 h-16 rounded-pill bg-surface" />
           </Pressable>
         </View>
@@ -42,10 +86,28 @@ export default function ScanScreen() {
     );
   }
 
+  if (stage === 'processing') {
+    return (
+      <View className="flex-1 bg-canvas items-center justify-center">
+        <GradientBackdrop variant="frame" opacity={0.35} />
+        <ActivityIndicator size="large" color="#C6F24E" />
+        <Text className="font-heading text-[17px] leading-[22px] text-ink mt-4">
+          Processing receipt...
+        </Text>
+        <Text className="text-sm text-ink-muted mt-1">Extracting items</Text>
+      </View>
+    );
+  }
+
   return (
     <View className="flex-1 bg-canvas">
-      <SafeAreaView className="flex-1 px-5" edges={['top']}>
-        <View className="flex-1 items-center justify-center gap-8">
+      <GradientBackdrop variant="frame" opacity={0.35} />
+      <ScrollView
+        className="flex-1 px-5"
+        contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="items-center gap-8 pt-12">
           <View className="w-24 h-24 rounded-pill bg-brand-lime items-center justify-center">
             <ScanLine size={40} color="#173300" />
           </View>
@@ -54,29 +116,31 @@ export default function ScanScreen() {
             <Text className="font-body text-[28px] leading-[34px] text-ink text-center">
               Scan your <Text className="font-display">receipt</Text>
             </Text>
-            <Text className="text-sm text-ink-muted text-center max-w-[280px]">
+            <Text className="text-sm text-ink-muted text-center max-w-[280px] leading-[20px]">
               Take a photo of your receipt and we'll extract the items automatically
             </Text>
           </View>
 
           <View className="gap-3 w-full px-4">
-            <Button
-              variant="primary"
-              icon={<ScanLine size={20} color="#173300" />}
-              label="Scan Receipt"
-              onPress={async () => {
-                if (!permission?.granted) {
-                  await requestPermission();
-                }
-                setStage('camera');
-              }}
-            />
-            <Button
-              variant="secondary"
-              icon={<ImagePlus size={18} color="#151316" />}
-              label="Upload Image"
-              onPress={() => {}}
-            />
+            <Pressable
+              className="bg-brand-lime rounded-pill px-6 h-14 items-center justify-center flex-row gap-2 active:opacity-80"
+              onPress={handleScanPress}
+              accessibilityRole="button"
+              accessibilityLabel="Scan Receipt"
+            >
+              <ScanLine size={20} color="#173300" />
+              <Text className="font-heading text-brand-lime-ink text-[15px]">Scan Receipt</Text>
+            </Pressable>
+
+            <Pressable
+              className="bg-surface rounded-pill px-5 h-12 justify-center flex-row items-center gap-2 shadow-[0_8px_16px_rgba(21,19,22,0.06)] active:opacity-80"
+              onPress={handleUpload}
+              accessibilityRole="button"
+              accessibilityLabel="Upload Image"
+            >
+              <ImagePlus size={18} color="#151316" />
+              <Text className="font-heading text-ink text-[15px]">Upload Image</Text>
+            </Pressable>
           </View>
 
           <View className="flex-row gap-2">
@@ -84,7 +148,7 @@ export default function ScanScreen() {
             <Tag label="Email Forward" variant="pastel-lilac" />
           </View>
         </View>
-      </SafeAreaView>
+      </ScrollView>
     </View>
   );
 }

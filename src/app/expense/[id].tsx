@@ -50,15 +50,15 @@ export default function ExpenseDetailScreen() {
             <View className="gap-2">
               <View className="flex-row items-center justify-between py-2">
                 <Text className="font-medium text-[15px] text-ink">You</Text>
-                <Text className="font-display text-base text-success">+$59.67</Text>
+                <Text className="font-display text-lg text-success">+₦59.67</Text>
               </View>
               <View className="flex-row items-center justify-between py-2">
                 <Text className="font-medium text-[15px] text-ink">Alex Chen</Text>
-                <Text className="font-display text-base text-ink">$29.83</Text>
+                <Text className="font-display text-lg text-ink">₦29.83</Text>
               </View>
               <View className="flex-row items-center justify-between py-2">
                 <Text className="font-medium text-[15px] text-ink">Sam Wilson</Text>
-                <Text className="font-display text-base text-ink">$29.83</Text>
+                <Text className="font-display text-lg text-ink">₦29.83</Text>
               </View>
             </View>
           </Card>
