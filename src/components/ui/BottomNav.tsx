@@ -16,7 +16,7 @@ interface BottomNavProps {
 
 export function BottomNav({ tabs, activeTab, onTabPress }: BottomNavProps) {
   return (
-    <View className="absolute bottom-4 left-5 right-5 h-16 bg-surface-black rounded-pill flex-row items-center justify-between px-3 shadow-[0_10px_20px_rgba(21,19,22,0.25)]">
+    <View className='absolute bottom-4 left-5 right-5 h-16 bg-surface-black rounded-pill flex-row items-center justify-between px-3 shadow-[0_10px_20px_rgba(21,19,22,0.25)]'>
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = tab.key === activeTab;
@@ -25,16 +25,14 @@ export function BottomNav({ tabs, activeTab, onTabPress }: BottomNavProps) {
           return (
             <Pressable
               key={tab.key}
-              className="bg-brand-lime rounded-pill h-12 px-4 flex-row items-center gap-1.5 -translate-y-1"
+              className='bg-brand-lime rounded-pill h-12 px-4 flex-row items-center gap-1.5'
               onPress={() => onTabPress(tab.key)}
-              accessibilityRole="button"
+              accessibilityRole='button'
               accessibilityLabel={tab.label ?? tab.key}
             >
-              <Icon size={18} color="#173300" />
+              <Icon size={18} color='#173300' />
               {tab.label && (
-                <Text className="font-heading text-[13px] text-brand-lime-ink">
-                  {tab.label}
-                </Text>
+                <Text className='font-heading text-[13px] text-brand-lime-ink'>{tab.label}</Text>
               )}
             </Pressable>
           );
@@ -43,9 +41,9 @@ export function BottomNav({ tabs, activeTab, onTabPress }: BottomNavProps) {
         return (
           <Pressable
             key={tab.key}
-            className="w-12 h-12 rounded-pill items-center justify-center"
+            className='w-12 h-12 rounded-pill items-center justify-center'
             onPress={() => onTabPress(tab.key)}
-            accessibilityRole="button"
+            accessibilityRole='button'
             accessibilityLabel={tab.label ?? tab.key}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
