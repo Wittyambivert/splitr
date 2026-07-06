@@ -1,6 +1,6 @@
 import { View, Text, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GradientBackdrop, Card, Tag, StatDisplay } from '@/components/ui';
+import { Card, Tag, StatDisplay } from '@/components/ui';
 
 const CATEGORIES = [
   { name: 'Food', amount: 340_000, color: 'bg-pastel-mint', percentage: 45 },

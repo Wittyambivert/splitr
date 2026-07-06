@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, Users, Plus, MoreVertical, Hand, Check } from 'lucide-react-native';
-import { Card, Tag, ListRow, StatDisplay, IconCircle, GradientBackdrop, Button } from '@/components/ui';
+import { Card, Tag, ListRow, StatDisplay, IconCircle, Button } from '@/components/ui';
 import { formatCurrency, simplifyDebts, calculateNetBalancesForMembers } from '@/utils';
 
 const SAMPLE_MEMBERS = [
@@ -63,7 +63,7 @@ export default function GroupDetailScreen() {
             <Button variant="primary" label="Settle Up" onPress={() => {}} />
           </Card>
 
-          <Card variant="hero" className="bg-gradient-card-warm">
+          <Card variant="hero">
             <Text className="text-xs text-ink-muted font-heading uppercase tracking-wide">
               Net Balances
             </Text>

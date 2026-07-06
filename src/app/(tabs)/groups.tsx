@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Plus, Users } from 'lucide-react-native';
-import { Card, Tag, ListRow, IconCircle, GradientBackdrop } from '@/components/ui';
+import { Card, Tag, ListRow, IconCircle } from '@/components/ui';
 
 const SAMPLE_GROUPS = [
   { id: '1', name: 'Flat 4', memberCount: 4, balance: '₦120,000' },
@@ -14,7 +14,6 @@ export default function GroupsScreen() {
 
   return (
     <View className="flex-1 bg-canvas">
-      <GradientBackdrop variant="frame" opacity={0.25} />
       <ScrollView
         className="flex-1 px-5"
         contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: 100 }}

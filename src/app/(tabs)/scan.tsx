@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { ScanLine, ImagePlus } from 'lucide-react-native';
 import { useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { GradientBackdrop, Tag } from '@/components/ui';
+import { Tag } from '@/components/ui';
 
 type ScanStage = 'idle' | 'processing';
 
@@ -44,7 +44,6 @@ export default function ScanScreen() {
   if (stage === 'processing') {
     return (
       <View className="flex-1 bg-canvas items-center justify-center">
-        <GradientBackdrop variant="frame" opacity={0.35} />
         <ActivityIndicator size="large" color="#C6F24E" />
         <Text className="font-heading text-[17px] leading-[22px] text-ink mt-4">
           Processing receipt...
@@ -64,7 +63,6 @@ export default function ScanScreen() {
 
   return (
     <View className="flex-1 bg-canvas">
-      <GradientBackdrop variant="frame" opacity={0.35} />
       <ScrollView
         className="flex-1 px-5"
         contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: 100 }}

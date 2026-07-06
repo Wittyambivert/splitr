@@ -1,4 +1,4 @@
-import { Card, GradientBackdrop, IconCircle, Tag } from '@/components/ui';
+import { Card, IconCircle, Tag } from '@/components/ui';
 import { ArrowRight, Menu, Plus, Search, Users } from 'lucide-react-native';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +13,6 @@ export default function DashboardScreen() {
 
   return (
     <View className='flex-1 bg-canvas'>
-      <GradientBackdrop variant='frame' opacity={0.35} />
       <ScrollView
         className='flex-1 px-5'
         contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 100 }}
