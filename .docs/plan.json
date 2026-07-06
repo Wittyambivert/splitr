@@ -1,0 +1,26 @@
+{
+  "plan": {
+    "step1": {
+      "action": "button to create new group",
+      "screen": "simple plus button in home page",
+      "description": "this opens a modal to add a group name with default 'group 1' already in the input field. once the user enters a name and clicks on create, the group is created and the user is redirected to the group page"
+    },
+    "step2": {
+      "action": "group now created",
+      "scrren": "group page",
+      "description": {
+        "item1": "show group name and a button to add members. the button should open up a modal to shows a qr code or a link to copy and share with friends.",
+        "item2": "the group page should also show a list of members in the group",
+        "item3": "the group page show button to add members, button to scan bill invoice/receipt and add scanned bill details to the group",
+        "item4": "and show a split bill button to split the bill among members in the group by 50%, 20%, or any percent according to the number of members in the group",
+        "item5": "the split bill button should open a modal to show the split bill details",
+        "item6": "there should be a button to create a virtual wallet for the group. this should open a modal to show the wallet details like a card number, expiry date, and cvv. the user should be able to copy the card number and share it with friends to fund the wallet"
+      }
+    },
+    "step3": {
+      "action": "show details of bill",
+      "scrren": "group page",
+      "description": "if you're the creator of the group, there should be a star beside your name to show that you're the creator of the group"
+    }
+  }
+}
