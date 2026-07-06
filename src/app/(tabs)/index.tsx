@@ -5,8 +5,7 @@ import { router } from 'expo-router';
 import { Menu, Plus, Search, Users } from 'lucide-react-native';
 import { Card, IconCircle, Button, BottomSheet } from '@/components/ui';
 import { useAuth, useGroups } from '@/hooks';
-import { signOutUser } from '@/services';
-import { isSupabaseConfigured } from '@/services';
+import { isSupabaseConfigured, signOutUser } from '@/services';
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();

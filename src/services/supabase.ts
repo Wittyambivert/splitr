@@ -30,7 +30,7 @@ export function getSupabaseClient(): SupabaseClient | null {
   }
 
   if (!client) {
-    client = createClient(supabaseUrl, supabaseAnonKey, {
+    client = createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
         storage: secureStoreAdapter,
         autoRefreshToken: true,

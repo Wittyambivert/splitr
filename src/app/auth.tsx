@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { LogIn, Mail, UserPlus } from 'lucide-react-native';
 import { Button } from '@/components/ui';
 import { signIn, signInWithGoogle, signUp } from '@/services';
 
