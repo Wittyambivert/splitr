@@ -20,8 +20,12 @@ function isValidSupabaseConfig(url: string, key: string): boolean {
   return url.startsWith('https://') && !url.includes('your-project') && key.length > 20;
 }
 
+export function isSupabaseConfigured(): boolean {
+  return !!(supabaseUrl && supabaseAnonKey && isValidSupabaseConfig(supabaseUrl, supabaseAnonKey));
+}
+
 export function getSupabaseClient(): SupabaseClient | null {
-  if (!supabaseUrl || !supabaseAnonKey || !isValidSupabaseConfig(supabaseUrl, supabaseAnonKey)) {
+  if (!isSupabaseConfigured()) {
     return null;
   }
 

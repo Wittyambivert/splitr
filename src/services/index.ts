@@ -1,5 +1,5 @@
-export { getSupabaseClient } from './supabase';
-export { signUp, signIn, signOutUser, subscribeToAuthChanges } from './auth';
+export { getSupabaseClient, isSupabaseConfigured } from './supabase';
+export { signUp, signIn, signInWithGoogle, signOutUser, subscribeToAuthChanges } from './auth';
 export { scanReceipt, getConfidenceLabel } from './ocr';
 export type { OcrResult, OcrStatus } from './ocr';
 export { sendPaymentReminder } from './notifications';

@@ -1,15 +1,23 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { getSupabaseClient } from '@/services/supabase';
 import { MOCK_UID, getMockMemberIds, generateLocalId } from '@/services/mock-data';
-import { useGroupStore } from '@/stores';
+import { useAuthStore, useGroupStore } from '@/stores';
 import type { Group } from '@/types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 const DEFAULT_MOCK_MEMBER_IDS = getMockMemberIds();
 
+function useCurrentUserId(): string {
+  const authedUser = useAuthStore((s) => s.user);
+  const supabase = getSupabaseClient();
+  if (supabase && authedUser) return authedUser.uid;
+  return MOCK_UID;
+}
+
 export function useGroups() {
   const { groups, isLoading, setGroups, addGroup, updateGroup, removeGroup, setLoading, setError } =
     useGroupStore();
+  const currentUserId = useCurrentUserId();
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   const subscribeToGroups = useCallback(() => {
@@ -26,7 +34,7 @@ export function useGroups() {
     supabase
       .from('group_members')
       .select('group_id')
-      .eq('user_id', MOCK_UID)
+      .eq('user_id', currentUserId)
       .then(async ({ data: memberships, error: membershipError }) => {
         if (membershipError) {
           setError(membershipError.message);
@@ -96,7 +104,7 @@ export function useGroups() {
     return () => {
       channelRef.current?.unsubscribe();
     };
-  }, [groups.length, setGroups, addGroup, updateGroup, removeGroup, setLoading, setError]);
+  }, [groups.length, currentUserId, setGroups, addGroup, updateGroup, removeGroup, setLoading, setError]);
 
   useEffect(() => {
     const cleanup = subscribeToGroups();
@@ -105,9 +113,10 @@ export function useGroups() {
 
   const createGroup = useCallback(
     async (name: string, memberIds: string[], currency: string = 'USD') => {
-      const allMembers = [MOCK_UID, ...memberIds.filter((id) => id !== MOCK_UID)];
-      const defaultMembers = memberIds.length === 0 ? DEFAULT_MOCK_MEMBER_IDS : allMembers;
       const supabase = getSupabaseClient();
+      const uid = currentUserId;
+      const allMembers = [uid, ...memberIds.filter((id) => id !== uid)];
+      const defaultMembers = memberIds.length === 0 ? DEFAULT_MOCK_MEMBER_IDS : allMembers;
 
       if (!supabase) {
         const localId = generateLocalId();
@@ -115,7 +124,7 @@ export function useGroups() {
           groupId: localId,
           name,
           members: defaultMembers,
-          createdBy: MOCK_UID,
+          createdBy: uid,
           createdAt: Date.now(),
           currency,
         };
@@ -128,7 +137,7 @@ export function useGroups() {
         .insert({
           name,
           member_ids: allMembers,
-          created_by: MOCK_UID,
+          created_by: uid,
           currency,
         })
         .select('id')
@@ -136,9 +145,9 @@ export function useGroups() {
 
       if (error) throw error;
 
-      const memberRows = allMembers.map((uid) => ({
+      const memberRows = allMembers.map((mUid) => ({
         group_id: data.id,
-        user_id: uid,
+        user_id: mUid,
       }));
 
       const { error: memberError } = await supabase.from('group_members').insert(memberRows);
@@ -146,7 +155,7 @@ export function useGroups() {
 
       return data.id as string;
     },
-    [addGroup],
+    [addGroup, currentUserId],
   );
 
   const deleteGroup = useCallback(

@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Menu, Plus, Search, Users } from 'lucide-react-native';
 import { Card, IconCircle, Button, BottomSheet } from '@/components/ui';
 import { useAuth, useGroups } from '@/hooks';
+import { signOutUser } from '@/services';
+import { isSupabaseConfigured } from '@/services';
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
@@ -40,6 +42,25 @@ export default function DashboardScreen() {
     setShowCreateModal(true);
   };
 
+  const handleSignOut = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOutUser();
+          } catch {
+            // ignore
+          }
+        },
+      },
+    ]);
+  };
+
+  const showSignOut = isSupabaseConfigured();
+
   const displayName = user?.displayName ?? 'User';
 
   return (
@@ -56,7 +77,11 @@ export default function DashboardScreen() {
           </View>
           <View className="flex-row items-center gap-3">
             <IconCircle icon={Search} variant="surface" accessibilityLabel="Search" onPress={() => {}} />
-            <IconCircle icon={Menu} variant="surface" accessibilityLabel="Menu" onPress={() => {}} />
+            {showSignOut ? (
+              <IconCircle icon={Menu} variant="surface" accessibilityLabel="Sign out" onPress={handleSignOut} />
+            ) : (
+              <IconCircle icon={Menu} variant="surface" accessibilityLabel="Menu" onPress={() => {}} />
+            )}
           </View>
         </View>
 

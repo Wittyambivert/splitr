@@ -1,6 +1,10 @@
 import { getSupabaseClient } from './supabase';
+import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
 import type { User } from '@/types';
 import { useAuthStore } from '@/stores';
+
+WebBrowser.maybeCompleteAuthSession();
 
 function mapSupabaseUser(sbUser: { id: string; email?: string | null; user_metadata?: { full_name?: string; avatar_url?: string | null } }): User {
   return {
@@ -27,6 +31,7 @@ export async function signUp(email: string, password: string, displayName: strin
   if (!data.user) throw new Error('Sign-up failed');
 
   const user = mapSupabaseUser(data.user);
+
   const { error: profileError } = await supabase.from('profiles').insert({
     id: user.uid,
     display_name: displayName,
@@ -46,6 +51,30 @@ export async function signIn(email: string, password: string): Promise<User> {
   if (error) throw error;
   if (!data.user) throw new Error('Sign-in failed');
   return mapSupabaseUser(data.user);
+}
+
+export async function signInWithGoogle(): Promise<void> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase not configured — Google sign-in unavailable.');
+
+  const redirectUri = makeRedirectUri({
+    scheme: 'splitr',
+    path: 'auth/callback',
+  });
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: redirectUri },
+  });
+
+  if (error) throw error;
+  if (!data?.url) throw new Error('No OAuth URL returned');
+
+  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+
+  if (result.type !== 'success') {
+    throw new Error('Google sign-in was cancelled or failed');
+  }
 }
 
 export async function signOutUser(): Promise<void> {

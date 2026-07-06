@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import { useAuthStore } from '@/stores';
 import { MOCK_USER } from '@/services/mock-data';
+import { isSupabaseConfigured } from '@/services';
 
 export function useAuth() {
   const { user, isLoading, error, setUser } = useAuthStore();
+  const supabaseConfigured = isSupabaseConfigured();
 
   useEffect(() => {
-    if (!user) {
+    if (!supabaseConfigured && !user) {
       setUser({
         uid: MOCK_USER.uid,
         displayName: MOCK_USER.displayName,
@@ -16,12 +18,12 @@ export function useAuth() {
         createdAt: Date.now(),
       });
     }
-  }, [user, setUser]);
+  }, [user, setUser, supabaseConfigured]);
 
   return {
     user,
-    isLoading: isLoading && !user,
+    isLoading: !supabaseConfigured ? false : isLoading,
     error,
-    isAuthenticated: true,
+    isAuthenticated: !supabaseConfigured || user !== null,
   };
 }

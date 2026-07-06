@@ -1,15 +1,23 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { getSupabaseClient } from '@/services/supabase';
 import { MOCK_UID, generateLocalId } from '@/services/mock-data';
-import { useExpenseStore } from '@/stores';
+import { useAuthStore, useExpenseStore } from '@/stores';
 import type { Expense, ExpenseSplit } from '@/types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 const PAGE_SIZE = 20;
 
+function useCurrentUserId(): string {
+  const authedUser = useAuthStore((s) => s.user);
+  const supabase = getSupabaseClient();
+  if (supabase && authedUser) return authedUser.uid;
+  return MOCK_UID;
+}
+
 export function useExpenses(groupId: string) {
   const { expenses, isLoading, setExpenses, addExpense, updateExpense, removeExpense, setLoading, setError } =
     useExpenseStore();
+  const currentUserId = useCurrentUserId();
   const groupExpenses = expenses[groupId] ?? [];
   const channelRef = useRef<RealtimeChannel | null>(null);
 
@@ -104,7 +112,7 @@ export function useExpenses(groupId: string) {
           ocr_items: expenseData.ocrItems,
           locked: expenseData.locked,
           notes: expenseData.notes,
-          created_by: MOCK_UID,
+          created_by: currentUserId,
         })
         .select('id')
         .single();
@@ -112,7 +120,7 @@ export function useExpenses(groupId: string) {
       if (error) throw error;
       return data.id as string;
     },
-    [groupId, addExpense],
+    [groupId, currentUserId, addExpense],
   );
 
   const removeExpenseFromGroup = useCallback(
