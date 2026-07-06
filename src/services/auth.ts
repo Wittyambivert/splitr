@@ -15,6 +15,8 @@ function mapSupabaseUser(sbUser: { id: string; email?: string | null; user_metad
 
 export async function signUp(email: string, password: string, displayName: string): Promise<User> {
   const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase not configured — sign-up unavailable.');
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -38,6 +40,8 @@ export async function signUp(email: string, password: string, displayName: strin
 
 export async function signIn(email: string, password: string): Promise<User> {
   const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase not configured — sign-in unavailable.');
+
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
   if (!data.user) throw new Error('Sign-in failed');
@@ -46,6 +50,11 @@ export async function signIn(email: string, password: string): Promise<User> {
 
 export async function signOutUser(): Promise<void> {
   const supabase = getSupabaseClient();
+  if (!supabase) {
+    useAuthStore.getState().reset();
+    return;
+  }
+
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
   useAuthStore.getState().reset();
@@ -53,11 +62,14 @@ export async function signOutUser(): Promise<void> {
 
 export function subscribeToAuthChanges(): () => void {
   const supabase = getSupabaseClient();
+  if (!supabase) return () => {};
+
   const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
     const store = useAuthStore.getState();
 
     if (session?.user) {
       const supabaseClient = getSupabaseClient();
+      if (!supabaseClient) return;
       const { data: profile } = await supabaseClient
         .from('profiles')
         .select('*')

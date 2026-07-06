@@ -7,6 +7,10 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 const PAGE_SIZE = 20;
 const MOCK_UID = 'mock-user-1';
 
+function generateLocalId(): string {
+  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
 export function useExpenses(groupId: string) {
   const { expenses, isLoading, setExpenses, addExpense, updateExpense, removeExpense, setLoading, setError } =
     useExpenseStore();
@@ -17,6 +21,12 @@ export function useExpenses(groupId: string) {
     if (!groupId) return;
 
     const supabase = getSupabaseClient();
+    if (!supabase) {
+      setExpenses(groupId, []);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
     supabase
@@ -72,6 +82,18 @@ export function useExpenses(groupId: string) {
   const createExpense = useCallback(
     async (expenseData: Omit<Expense, 'expenseId' | 'createdAt'>) => {
       const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        const localId = generateLocalId();
+        const expense: Expense = {
+          expenseId: localId,
+          ...expenseData,
+          createdAt: Date.now(),
+        };
+        addExpense(groupId, expense);
+        return localId;
+      }
+
       const { data, error } = await supabase
         .from('expenses')
         .insert({
@@ -95,14 +117,16 @@ export function useExpenses(groupId: string) {
       if (error) throw error;
       return data.id as string;
     },
-    [groupId],
+    [groupId, addExpense],
   );
 
   const removeExpenseFromGroup = useCallback(
     async (expenseId: string) => {
       const supabase = getSupabaseClient();
-      const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
-      if (error) throw error;
+      if (supabase) {
+        const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
+        if (error) throw error;
+      }
       removeExpense(groupId, expenseId);
     },
     [groupId, removeExpense],

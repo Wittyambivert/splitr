@@ -6,6 +6,10 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 const MOCK_UID = 'mock-user-1';
 
+function generateLocalId(): string {
+  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
 export function useGroups() {
   const { groups, isLoading, setGroups, addGroup, updateGroup, removeGroup, setLoading, setError } =
     useGroupStore();
@@ -13,6 +17,12 @@ export function useGroups() {
 
   const subscribeToGroups = useCallback(() => {
     const supabase = getSupabaseClient();
+    if (!supabase) {
+      setGroups([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
     supabase
@@ -97,8 +107,22 @@ export function useGroups() {
 
   const createGroup = useCallback(
     async (name: string, memberIds: string[], currency: string = 'USD') => {
-      const supabase = getSupabaseClient();
       const allMembers = [...new Set([...memberIds, MOCK_UID])];
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        const localId = generateLocalId();
+        const group: Group = {
+          groupId: localId,
+          name,
+          members: allMembers,
+          createdBy: MOCK_UID,
+          createdAt: Date.now(),
+          currency,
+        };
+        addGroup(group);
+        return localId;
+      }
 
       const { data, error } = await supabase
         .from('groups')
@@ -123,14 +147,16 @@ export function useGroups() {
 
       return data.id as string;
     },
-    [],
+    [addGroup],
   );
 
   const deleteGroup = useCallback(
     async (groupId: string) => {
       const supabase = getSupabaseClient();
-      const { error } = await supabase.from('groups').delete().eq('id', groupId);
-      if (error) throw error;
+      if (supabase) {
+        const { error } = await supabase.from('groups').delete().eq('id', groupId);
+        if (error) throw error;
+      }
       removeGroup(groupId);
     },
     [removeGroup],
