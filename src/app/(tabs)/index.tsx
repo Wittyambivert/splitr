@@ -28,7 +28,7 @@ export default function DashboardScreen() {
       setCreateError(null);
       router.push({ pathname: '/group/[id]', params: { id: groupId } });
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : 'Failed to create group');
+      setCreateError(err instanceof Error ? err.message : String(err));
     } finally {
       setCreating(false);
     }

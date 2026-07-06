@@ -5,13 +5,14 @@ import { useLocalSearchParams, router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import {
   ArrowLeft, Camera, Check, Clipboard, Copy, CreditCard, Equal, ImagePlus,
-  MoreVertical, PieChart, Plus, ScanLine, Star, UserPlus,
+  MoreVertical, PieChart, Plus, ReceiptText, ScanLine, Star, Trash2, UserPlus,
 } from 'lucide-react-native';
 import { Card, Tag, IconCircle, Button, BottomSheet } from '@/components/ui';
-import { useAuth, useExpenses } from '@/hooks';
+import { useAuth, useExpenses, useGroups } from '@/hooks';
 import { useGroupStore } from '@/stores';
 import { formatCurrency, formatRelativeTime, getInitials, pluralize, calculateSplit, simplifyDebts, calculateNetBalancesForMembers } from '@/utils';
 import { getVirtualCard, scanReceipt } from '@/services';
+import { getMemberDisplayName } from '@/services/mock-data';
 import type { VirtualCard as VirtualCardType, OcrResult } from '@/services';
 import type { SplitType, OcrItem, ExpenseSplit, ExpenseCategory, NetBalance, SimplifiedDebt } from '@/types';
 
@@ -26,16 +27,12 @@ function getPastel(index: number) {
   return PASTEL_COLORS[index % PASTEL_COLORS.length];
 }
 
-function getMemberLabel(uid: string, currentUid: string | undefined, index: number): string {
-  if (uid === currentUid) return 'You';
-  return `Member ${index + 1}`;
-}
-
 type ScanStage = 'idle' | 'scanning' | 'reviewing' | 'error';
 
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
+  useGroups();
   const groups = useGroupStore((s) => s.groups);
   const { expenses, isLoading: expensesLoading, createExpense } = useExpenses(id ?? '');
 
@@ -43,6 +40,7 @@ export default function GroupDetailScreen() {
   const [showScanBill, setShowScanBill] = useState(false);
   const [showSplitBill, setShowSplitBill] = useState(false);
   const [showWallet, setShowWallet] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const [scanStage, setScanStage] = useState<ScanStage>('idle');
   const [scanError, setScanError] = useState<string | null>(null);
@@ -61,7 +59,7 @@ export default function GroupDetailScreen() {
   const currentUid = user?.uid;
 
   const memberNames = useMemo(
-    () => new Map(members.map((uid, i) => [uid, getMemberLabel(uid, currentUid, i)])),
+    () => new Map(members.map((uid) => [uid, uid === currentUid ? 'You' : getMemberDisplayName(uid)])),
     [members, currentUid],
   );
 
@@ -216,6 +214,41 @@ export default function GroupDetailScreen() {
     Alert.alert('Invite Link', 'Invite link copied to clipboard!');
   }, []);
 
+  const handleDeleteGroup = useCallback(() => {
+    Alert.alert('Delete Group', `Are you sure you want to delete "${group?.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          if (group) {
+            useGroupStore.getState().removeGroup(group.groupId);
+            router.replace('/(tabs)');
+          }
+        },
+      },
+    ]);
+  }, [group]);
+
+  const handleMockScan = useCallback(() => {
+    setScanStage('reviewing');
+    const subtotal = 42.50;
+    setOcrResult({
+      items: [
+        { name: 'Margherita Pizza', price: 14.99, quantity: 1, confidence: 0.95, assignedTo: [], category: 'food' },
+        { name: 'Caesar Salad', price: 9.50, quantity: 1, confidence: 0.92, assignedTo: [], category: 'food' },
+        { name: 'Iced Tea', price: 3.50, quantity: 2, confidence: 0.88, assignedTo: [], category: 'drinks' },
+        { name: 'Tiramisu', price: 8.00, quantity: 1, confidence: 0.90, assignedTo: [], category: 'food' },
+      ],
+      subtotal,
+      tax: 3.40,
+      tip: 6.38,
+      total: subtotal + 3.40 + 6.38,
+      confidence: 0.91,
+      rawText: 'Mock receipt for demo',
+    });
+  }, []);
+
   if (!group) {
     return (
       <View className="flex-1 bg-canvas items-center justify-center gap-3">
@@ -234,7 +267,7 @@ export default function GroupDetailScreen() {
             <Text className="font-heading text-[17px] text-ink">{group.name}</Text>
             <Text className="text-sm text-ink-muted">{members.length} {pluralize(members.length, 'member')}</Text>
           </View>
-          <IconCircle icon={MoreVertical} variant="surface" accessibilityLabel="Menu" />
+          <IconCircle icon={MoreVertical} variant="surface" accessibilityLabel="Menu" onPress={() => setShowMoreMenu(true)} />
         </View>
 
         <ScrollView
@@ -417,24 +450,36 @@ export default function GroupDetailScreen() {
           <Text className="font-heading text-xl text-white">Scan Bill</Text>
 
           {scanStage === 'idle' && (
-            <View className="flex-row gap-3">
+            <View className="gap-3">
+              <View className="flex-row gap-3">
+                <Pressable
+                  className="flex-1 bg-[rgba(255,255,255,0.1)] rounded-lg p-5 items-center gap-3 active:opacity-80"
+                  onPress={() => pickImage(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Take photo"
+                >
+                  <Camera size={28} color="#FFFFFF" />
+                  <Text className="font-medium text-[14px] text-white">Take Photo</Text>
+                </Pressable>
+                <Pressable
+                  className="flex-1 bg-[rgba(255,255,255,0.1)] rounded-lg p-5 items-center gap-3 active:opacity-80"
+                  onPress={() => pickImage(false)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Upload from gallery"
+                >
+                  <ImagePlus size={28} color="#FFFFFF" />
+                  <Text className="font-medium text-[14px] text-white">Upload</Text>
+                </Pressable>
+              </View>
+              <View className="h-px bg-white/20" />
               <Pressable
-                className="flex-1 bg-[rgba(255,255,255,0.1)] rounded-lg p-5 items-center gap-3 active:opacity-80"
-                onPress={() => pickImage(true)}
+                className="bg-[rgba(198,242,78,0.15)] border border-brand-lime rounded-lg p-4 items-center gap-2 active:opacity-80"
+                onPress={handleMockScan}
                 accessibilityRole="button"
-                accessibilityLabel="Take photo"
+                accessibilityLabel="Use demo receipt"
               >
-                <Camera size={28} color="#FFFFFF" />
-                <Text className="font-medium text-[14px] text-white">Take Photo</Text>
-              </Pressable>
-              <Pressable
-                className="flex-1 bg-[rgba(255,255,255,0.1)] rounded-lg p-5 items-center gap-3 active:opacity-80"
-                onPress={() => pickImage(false)}
-                accessibilityRole="button"
-                accessibilityLabel="Upload from gallery"
-              >
-                <ImagePlus size={28} color="#FFFFFF" />
-                <Text className="font-medium text-[14px] text-white">Upload</Text>
+                <Text className="font-heading text-[14px] text-brand-lime">Use Demo Receipt</Text>
+                <Text className="text-xs text-white/50">Quick demo with sample items</Text>
               </Pressable>
             </View>
           )}
@@ -460,6 +505,14 @@ export default function GroupDetailScreen() {
                   accessibilityLabel="Try again"
                 >
                   <Text className="font-heading text-[14px] text-white">Try Again</Text>
+                </Pressable>
+                <Pressable
+                  className="bg-[rgba(198,242,78,0.15)] border border-brand-lime rounded-pill px-5 h-11 items-center justify-center active:opacity-80"
+                  onPress={handleMockScan}
+                  accessibilityRole="button"
+                  accessibilityLabel="Use demo receipt"
+                >
+                  <Text className="font-heading text-[14px] text-brand-lime">Use Demo</Text>
                 </Pressable>
               </View>
             </View>
@@ -645,6 +698,35 @@ export default function GroupDetailScreen() {
           </View>
 
           <Text className="text-sm text-white/50 text-center">Share these details with group members to fund the wallet</Text>
+        </View>
+      </BottomSheet>
+
+      <BottomSheet visible={showMoreMenu} onClose={() => setShowMoreMenu(false)}>
+        <View className="px-5 gap-4">
+          <Text className="font-heading text-xl text-white">Group Menu</Text>
+          <View className="h-px bg-white/20" />
+          <Pressable
+            className="flex-row items-center gap-4 py-3 active:opacity-80"
+            onPress={() => { setShowMoreMenu(false); handleMockScan(); setShowScanBill(true); }}
+            accessibilityRole="button"
+            accessibilityLabel="Add mock expense"
+          >
+            <View className="w-10 h-10 rounded-pill bg-[rgba(255,255,255,0.1)] items-center justify-center">
+              <ReceiptText size={20} color="#FFFFFF" />
+            </View>
+            <Text className="font-medium text-[15px] text-white">Add Mock Expense</Text>
+          </Pressable>
+          <Pressable
+            className="flex-row items-center gap-4 py-3 active:opacity-80"
+            onPress={() => { setShowMoreMenu(false); handleDeleteGroup(); }}
+            accessibilityRole="button"
+            accessibilityLabel="Delete group"
+          >
+            <View className="w-10 h-10 rounded-pill bg-[rgba(226,85,75,0.2)] items-center justify-center">
+              <Trash2 size={20} color="#E2554B" />
+            </View>
+            <Text className="font-medium text-[15px] text-danger">Delete Group</Text>
+          </Pressable>
         </View>
       </BottomSheet>
     </View>

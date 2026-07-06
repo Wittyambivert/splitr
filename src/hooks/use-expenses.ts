@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { getSupabaseClient } from '@/services/supabase';
+import { MOCK_UID, generateLocalId } from '@/services/mock-data';
 import { useExpenseStore } from '@/stores';
 import type { Expense, ExpenseSplit } from '@/types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 const PAGE_SIZE = 20;
-const MOCK_UID = 'mock-user-1';
-
-function generateLocalId(): string {
-  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
 
 export function useExpenses(groupId: string) {
   const { expenses, isLoading, setExpenses, addExpense, updateExpense, removeExpense, setLoading, setError } =
@@ -22,7 +18,6 @@ export function useExpenses(groupId: string) {
 
     const supabase = getSupabaseClient();
     if (!supabase) {
-      setExpenses(groupId, []);
       setLoading(false);
       return;
     }

@@ -1,14 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { getSupabaseClient } from '@/services/supabase';
+import { MOCK_UID, getMockMemberIds, generateLocalId } from '@/services/mock-data';
 import { useGroupStore } from '@/stores';
 import type { Group } from '@/types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
-const MOCK_UID = 'mock-user-1';
-
-function generateLocalId(): string {
-  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
+const DEFAULT_MOCK_MEMBER_IDS = getMockMemberIds();
 
 export function useGroups() {
   const { groups, isLoading, setGroups, addGroup, updateGroup, removeGroup, setLoading, setError } =
@@ -18,8 +15,9 @@ export function useGroups() {
   const subscribeToGroups = useCallback(() => {
     const supabase = getSupabaseClient();
     if (!supabase) {
-      setGroups([]);
-      setLoading(false);
+      if (groups.length === 0) {
+        setLoading(false);
+      }
       return;
     }
 
@@ -98,7 +96,7 @@ export function useGroups() {
     return () => {
       channelRef.current?.unsubscribe();
     };
-  }, [setGroups, addGroup, updateGroup, removeGroup, setLoading, setError]);
+  }, [groups.length, setGroups, addGroup, updateGroup, removeGroup, setLoading, setError]);
 
   useEffect(() => {
     const cleanup = subscribeToGroups();
@@ -107,7 +105,8 @@ export function useGroups() {
 
   const createGroup = useCallback(
     async (name: string, memberIds: string[], currency: string = 'USD') => {
-      const allMembers = [...new Set([...memberIds, MOCK_UID])];
+      const allMembers = [MOCK_UID, ...memberIds.filter((id) => id !== MOCK_UID)];
+      const defaultMembers = memberIds.length === 0 ? DEFAULT_MOCK_MEMBER_IDS : allMembers;
       const supabase = getSupabaseClient();
 
       if (!supabase) {
@@ -115,7 +114,7 @@ export function useGroups() {
         const group: Group = {
           groupId: localId,
           name,
-          members: allMembers,
+          members: defaultMembers,
           createdBy: MOCK_UID,
           createdAt: Date.now(),
           currency,
